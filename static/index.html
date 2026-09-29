@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XAUUSD SMC Signal V1</title>
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#e8edf7;font-family:Arial,sans-serif}
+header{padding:16px 18px;background:#11182b;border-bottom:1px solid #26304a;display:flex;justify-content:space-between;align-items:center}
+h1{font-size:19px;margin:0}.muted{color:#91a0ba;font-size:12px}
+.wrap{max-width:1200px;margin:auto;padding:14px}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.card{background:#11182b;border:1px solid #26304a;border-radius:12px;padding:14px}
+#chart{height:470px}.signal{font-size:28px;font-weight:800;margin:8px 0 14px}
+.buy{color:#42d392}.sell{color:#ff6b7a}.watch{color:#f0c96a}
+.rows{display:grid;grid-template-columns:1fr 1fr;gap:8px}.row{background:#0b1020;padding:10px;border-radius:8px}
+.label{display:block;color:#91a0ba;font-size:11px;margin-bottom:4px}.value{font-weight:700}
+.reason{padding:8px 0;border-bottom:1px solid #26304a;font-size:13px}
+.badge{display:inline-block;padding:5px 8px;border-radius:7px;background:#202a42;margin:3px;font-size:11px}
+footer{padding:14px;color:#71809a;font-size:11px;text-align:center}
+@media(max-width:800px){.grid{grid-template-columns:1fr}#chart{height:360px}header{position:sticky;top:0;z-index:2}}
+</style>
+</head>
+<body>
+<header><div><h1>🟡 XAUUSD SMC SIGNAL</h1><div class="muted">Version 1 • M15 • SMC Engine</div></div><div id="status" class="muted">Connecting...</div></header>
+<div class="wrap">
+<div class="grid">
+<section class="card"><div id="chart"></div></section>
+<aside class="card">
+<div class="muted">CURRENT SIGNAL</div>
+<div id="direction" class="signal watch">WAIT</div>
+<div class="rows">
+<div class="row"><span class="label">PRICE</span><span id="price" class="value">-</span></div>
+<div class="row"><span class="label">BIAS</span><span id="bias" class="value">-</span></div>
+<div class="row"><span class="label">ENTRY</span><span id="entry" class="value">-</span></div>
+<div class="row"><span class="label">SL</span><span id="sl" class="value">-</span></div>
+<div class="row"><span class="label">TP1</span><span id="tp1" class="value">-</span></div>
+<div class="row"><span class="label">TP2</span><span id="tp2" class="value">-</span></div>
+<div class="row"><span class="label">RR TP1</span><span id="rr1" class="value">-</span></div>
+<div class="row"><span class="label">RR TP2</span><span id="rr2" class="value">-</span></div>
+</div>
+<div style="margin-top:12px"><span id="premium" class="badge">Premium: -</span><span id="sweep" class="badge">Sweep: -</span><span id="mss" class="badge">MSS: -</span></div>
+<h3 style="font-size:14px">SMC Reason</h3><div id="reasons"></div>
+</aside>
+</div>
+<section class="card" style="margin-top:14px">
+<div class="muted">ENGINE STATUS</div>
+<p style="font-size:13px">V1 menggunakan data demo untuk menguji seluruh alur aplikasi. Setelah ini data XAUUSD live akan dipasang pada backend tanpa perlu mengubah tampilan Android.</p>
+</section>
+</div>
+<footer>XAUUSD SMC Signal V1 — signal adalah analisis sistem, bukan jaminan hasil trading.</footer>
+<script>
+const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+ layout:{background:{color:'#11182b'},textColor:'#aebbd0'},
+ grid:{vertLines:{color:'#1c263c'},horzLines:{color:'#1c263c'}},
+ rightPriceScale:{borderColor:'#26304a'},timeScale:{borderColor:'#26304a',timeVisible:true}
+});
+const candles = chart.addCandlestickSeries();
+async function load(){
+ try{
+  const r=await fetch('/api/market'); const d=await r.json(); candles.setData(d.candles);
+  chart.timeScale().fitContent(); render(d.analysis);
+  document.getElementById('status').textContent='● Online';
+ }catch(e){document.getElementById('status').textContent='Offline';}
+}
+function set(id,v){document.getElementById(id).textContent=v??'-'}
+function render(a){
+ const el=document.getElementById('direction'); set('direction',a.direction);
+ el.className='signal '+(a.direction.includes('BUY')?'buy':a.direction.includes('SELL')?'sell':'watch');
+ set('price',a.price);set('bias',a.bias);set('entry',a.entry);set('sl',a.sl);set('tp1',a.tp1);set('tp2',a.tp2);
+ set('rr1',a.rr_tp1?a.rr_tp1+':1':'-');set('rr2',a.rr_tp2?a.rr_tp2+':1':'-');
+ set('premium','Premium: '+(a.premium?'YES':'NO'));set('sweep','Sweep: '+(a.liquidity_sweep||'-'));set('mss','MSS: '+(a.mss||'-'));
+ document.getElementById('reasons').innerHTML=a.reasons.map(x=>'<div class="reason">✓ '+x+'</div>').join('');
+}
+load(); setInterval(load,30000);
+</script>
+</body>
+</html>
